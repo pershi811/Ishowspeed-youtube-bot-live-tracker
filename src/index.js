@@ -1,6 +1,7 @@
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    console.log(`Incoming request: ${request.method} ${url.pathname}`);
 
     // 1. Handle YouTube WebSub Verification & Auto-Subscribe Trigger (GET)
     if (request.method === "GET") {
@@ -8,6 +9,7 @@ export default {
       
       // Handle verification challenge from YouTube's hub
       if (challenge) {
+        console.log("Handshaking challenge received from YouTube hub:", challenge);
         return new Response(challenge, { status: 200 });
       }
 
@@ -33,12 +35,15 @@ export default {
           });
 
           if (subResponse.ok || subResponse.status === 202) {
+            console.log("Subscription request sent successfully to YouTube hub.");
             return new Response("Subscription request sent successfully to YouTube's hub!", { status: 200 });
           } else {
             const errText = await subResponse.text();
+            console.error(`Failed to subscribe: ${errText}`);
             return new Response(`Failed to subscribe: ${errText}`, { status: 500 });
           }
         } catch (err) {
+          console.error(`Error sending subscription: ${err.message}`);
           return new Response(`Error sending subscription: ${err.message}`, { status: 500 });
         }
       }
@@ -49,14 +54,16 @@ export default {
     // 2. Handle YouTube Live Notifications (POST)
     if (request.method === "POST") {
       const xmlText = await request.text();
+      console.log("Received POST notification from YouTube:", xmlText);
       
       // Check if the payload indicates a video/livestream update
       if (xmlText.includes("yt:videoid") || xmlText.includes("http://www.youtube.com/xml/feed/v1.0/entries.xml")) {
+        console.log("Live stream notification detected! Sending Discord alert...");
         await fetch(env.DISCORD_WEBHOOK_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ 
-            content: "🚨 **IShowSpeed might be LIVE on YouTube right now!** Check out the channel." 
+            content: "🚨 **IShowSpeed is LIVE on YouTube right now!** Check out the stream!" 
           })
         });
       }
