@@ -24,6 +24,7 @@ export default {
           "hub.topic": `https://www.youtube.com/xml/feeds/videos.xml?channel_id=${channelId}`,
           "hub.verify": "async",
           "hub.mode": "subscribe",
+          "hub.lease_seconds": "864000", // Request a longer 10-day lease
           "hub.secret": ""
         });
 
